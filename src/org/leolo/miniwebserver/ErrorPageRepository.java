@@ -51,6 +51,11 @@ public class ErrorPageRepository {
 		if(replaceSet !=null){
 			for(Object key:replaceSet.keySet()){
 				String var = "${"+key+"}";
+				if(replaceSet.get(key)==null){
+					logger.warn("{} has null empty", key);
+					continue;
+				}
+				logger.debug("{} -> {}",var,replaceSet.get(key).toString());
 				sData = sData.replace(var, replaceSet.get(key).toString());
 			}
 			logger.info("Finished replacing variable, old size {}, new size {}", data.length(), sData.length());
@@ -102,10 +107,15 @@ public class ErrorPageRepository {
 		}
 		String sData = e.data.toString();
 		//Step 2: Replace the variables
-		if(replaceSet !=null){
-			for(Object key:replaceSet.keySet()){
+		if(rSet !=null){
+			for(Object key:rSet.keySet()){
 				String var = "${"+key+"}";
-				sData = sData.replace(var, replaceSet.get(key).toString());
+				if(rSet.get(key)==null){
+					logger.warn("{} has null empty", key);
+					continue;
+				}
+				logger.debug("{} -> {}",var,rSet.get(key).toString());
+				sData = sData.replace(var, rSet.get(key).toString());
 			}
 			logger.info("Finished replacing variable, old size {}, new size {}", e.data.length(), sData.length());
 		}else{

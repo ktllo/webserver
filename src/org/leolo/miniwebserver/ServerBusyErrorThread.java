@@ -3,6 +3,7 @@ package org.leolo.miniwebserver;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -60,44 +61,46 @@ class ServerBusyErrorThread extends Thread {
 		//Master Loop
 		while(true){
 			Socket s = null;
-			if(queueSize==0){
-				synchronized(this){
-					try {
-						logger.info("Waiting for new entry");
-						wait();
-					} catch (InterruptedException e) {
-						logger.error(e.getMessage(),e);
+			try{
+				if(queueSize==0){
+					synchronized(this){
+						try {
+							logger.info("Waiting for new entry");
+							wait();
+						} catch (InterruptedException e) {
+							logger.error(e.getMessage(),e);
+						}
+						logger.info("Has entry");
 					}
-					logger.info("Has entry");
 				}
-			}
-			synchronized(this){
-				Entry e = queue.poll();
-				if(e!=null){
-					s = e.socket;
-					logger.info("Wait time {} ms",System.currentTimeMillis() - e.time);
-				}else{
-					continue;
+				synchronized(this){
+					Entry e = queue.poll();
+					if(e!=null){
+						s = e.socket;
+						logger.info("Wait time {} ms",System.currentTimeMillis() - e.time);
+					}else{
+						continue;
+					}
 				}
-			}
-//			try {
-//				//Debug code
-//				Thread.sleep(2000);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				logger.error(e.getMessage(),e);
-//			}
-			try {
-				PrintWriter out = new PrintWriter(s.getOutputStream());
-				out.println("HTTP/1.1 503 Service Unavailable");
-				out.println("Content-type: text/html");
-				out.println("Connection: closed");
-				out.println();
-				out.println(ErrorPageRepository.getInstance().getErrorPage(503));
-				out.flush();
-				s.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+				try {
+					PrintWriter out = new PrintWriter(s.getOutputStream());
+					out.println("HTTP/1.1 503 Service Unavailable");
+					out.println("Content-type: text/html");
+					out.println("Connection: closed");
+					out.println();
+					out.println(ErrorPageRepository.getInstance().getErrorPage(503));
+					out.flush();
+					s.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}catch(Exception e){
+				logger.error(e.getMessage(),e);
+				try {
+					s.close();
+				} catch (IOException e1) {
+					logger.error(e1.getMessage(),e1);
+				}
 			}
 		}
 	}

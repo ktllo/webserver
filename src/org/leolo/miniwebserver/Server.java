@@ -19,6 +19,7 @@ public class Server {
 		prop.load(new java.io.FileInputStream("web.properties"));
 		ErrorPageRepository.getInstance().setReplaceSet(prop);
 		ErrorPageRepository.getInstance().loadErrorPage(503,"503.html",ErrorPageType.STATIC);
+		ErrorPageRepository.getInstance().loadErrorPage(404,"404.html",ErrorPageType.DYMANIC);
 		logger.info("Server ready");
 		while(true){
 			Socket s = ss.accept();
