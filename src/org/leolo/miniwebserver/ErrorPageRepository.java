@@ -11,25 +11,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ErrorPageRepository {
-	Logger logger = LoggerFactory.getLogger(ErrorPageRepository.class);
+	private static final Logger logger = LoggerFactory.getLogger(ErrorPageRepository.class);
 	
 	private static ErrorPageRepository instance;
 	
-	private Hashtable<Object,Object> replaceSet = null;
-	private Hashtable<Integer, Entry> repo = null;
+	private static Hashtable<Object,Object> replaceSet = null;
+	private static Hashtable<Integer, Entry> repo = null;
 	
+	@Deprecated
 	public synchronized static ErrorPageRepository getInstance(){
 		if(instance == null)
 			instance = new ErrorPageRepository();
 		return instance;
 	}
 	
-	private ErrorPageRepository(){
+	static{
 		repo = new Hashtable<>();
-		
 	}
 	
-	public void loadErrorPage(int errorCode,String name, ErrorPageType type){
+	public static void loadErrorPage(int errorCode,String name, ErrorPageType type){
 		StringBuilder data = new StringBuilder();
 		//Step 1: Read the target file
 		try {
@@ -41,6 +41,7 @@ public class ErrorPageRepository {
 				}
 				data.append(line).append("\r\n");//Always use Windows new line
 			}
+			br.close();
 		} catch (IOException e) {
 			logger.error(e.getMessage(),e);
 			throw new RuntimeException(e.getMessage(),e);
@@ -66,15 +67,15 @@ public class ErrorPageRepository {
 		repo.put(new Integer(errorCode), new Entry(type, sData));
 	}
 	
-	public Hashtable<Object,Object> getReplaceSet() {
+	public static Hashtable<Object,Object> getReplaceSet() {
 		return replaceSet;
 	}
 
-	public void setReplaceSet(Hashtable<Object,Object> replaceSet) {
-		this.replaceSet = replaceSet;
+	public static void setReplaceSet(Hashtable<Object,Object> replaceSet) {
+		ErrorPageRepository.replaceSet = replaceSet;
 	}
 	
-	private class Entry{
+	private static class Entry{
 		public Entry(ErrorPageType type, CharSequence data) {
 			super();
 			this.type = type;
@@ -89,7 +90,7 @@ public class ErrorPageRepository {
 		DYMANIC;
 	}
 	
-	public String getErrorPage(int errorCode){
+	public static String getErrorPage(int errorCode){
 		Entry e = repo.get(new Integer(errorCode));
 		if(e == null){
 			throw new RuntimeException("No such error page");
@@ -97,7 +98,7 @@ public class ErrorPageRepository {
 		return e.data.toString();
 	}
 	
-	public String getErrorPage(int errorCode, Map<Object, Object> rSet){
+	public static String getErrorPage(int errorCode, Map<Object, Object> rSet){
 		Entry e = repo.get(new Integer(errorCode));
 		if(e == null){
 			throw new RuntimeException("No such error page");

@@ -3,7 +3,6 @@ package org.leolo.miniwebserver;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -88,7 +87,7 @@ class ServerBusyErrorThread extends Thread {
 					out.println("Content-type: text/html");
 					out.println("Connection: closed");
 					out.println();
-					out.println(ErrorPageRepository.getInstance().getErrorPage(503));
+					out.println(ErrorPageRepository.getErrorPage(503));
 					out.flush();
 					s.close();
 				} catch (IOException e) {
