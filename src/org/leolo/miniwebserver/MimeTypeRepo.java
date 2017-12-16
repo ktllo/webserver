@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.json.JSONObject;
@@ -70,8 +71,8 @@ public class MimeTypeRepo {
 			Entry e = mimeMap.get(key);
 			if(e.extension != null){
 				for(String ext:e.extension){
-					if(!extMap.containsKey(ext)){
-						extMap.put(ext, e);
+					if(!extMap.containsKey(ext.toLowerCase())){
+						extMap.put(ext.toLowerCase(), e);
 					}else{
 						logger.warn("Dupulicated extension {}, for type {} and {}", ext, key, extMap.get(ext).typeName);
 					}
@@ -96,6 +97,7 @@ public class MimeTypeRepo {
 	}
 	
 	private void remap(String ext, String mime){
+		mimeMap.get(mime).addExtension(ext);
 		extMap.put(ext, mimeMap.get(mime));
 	}
 	
@@ -106,11 +108,15 @@ public class MimeTypeRepo {
 		return instance;
 	}
 	
-	class Entry{
+	public static String getMimeTypeByExtension(String ext){
+		Entry entry = instance.extMap.get(ext.toLowerCase());
+		return entry == null ? null : entry.typeName;
+	}
+	
+	static class Entry{
 		String source;
 		boolean compresable = false;
-		List<String> extension;
-		String defaultCharset;
+		Set<String> extension;
 		String typeName;
 		
 		Entry(String typeName){
@@ -119,16 +125,15 @@ public class MimeTypeRepo {
 		
 		void addExtension(String extension){
 			if(this.extension==null){
-				this.extension = new java.util.Vector<String>(5);
+				this.extension = new java.util.HashSet<>();
 			}
-			this.extension.add(extension);
+			this.extension.add(extension.toLowerCase());
 		}
 		
 		void addExtension(List extension){
-			if(this.extension==null){
-				this.extension = new java.util.Vector<String>(5);
+			for(Object o:extension){
+				addExtension(o.toString());
 			}
-			this.extension.addAll(extension);
 		}
 	}
 }
