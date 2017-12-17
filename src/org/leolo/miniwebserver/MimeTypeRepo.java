@@ -96,9 +96,16 @@ public class MimeTypeRepo {
 		
 	}
 	
-	private void remap(String ext, String mime){
-		mimeMap.get(mime).addExtension(ext);
-		extMap.put(ext, mimeMap.get(mime));
+	public void remap(String ext, String mime){
+		if(mimeMap.containsKey(mime)){
+			mimeMap.get(mime).addExtension(ext);
+			extMap.put(ext, mimeMap.get(mime));
+		}else{
+			Entry entry = new Entry(mime);
+			entry.addExtension(ext);
+			extMap.put(ext, entry);
+			mimeMap.put(mime, entry);
+		}
 	}
 	
 	public static synchronized MimeTypeRepo getInstance(){
@@ -130,6 +137,7 @@ public class MimeTypeRepo {
 			this.extension.add(extension.toLowerCase());
 		}
 		
+		@SuppressWarnings("rawtypes")
 		void addExtension(List extension){
 			for(Object o:extension){
 				addExtension(o.toString());
