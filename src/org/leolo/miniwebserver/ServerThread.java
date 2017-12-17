@@ -1,10 +1,14 @@
 package org.leolo.miniwebserver;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Set;
 
+import org.leolo.miniwebserver.http.HttpHeaders;
+import org.leolo.miniwebserver.http.MalformedHeaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,25 +39,42 @@ public class ServerThread extends Thread {
 	
 	public void run(){
 		logger.debug("Thread started");
-		final String MESSAGE = "<html><body><p style=\"font-size:32pt;color:red\">Hello , Thread ID = "+this.getName()+"</p></body></html>";
-        try {
-			PrintWriter out = new PrintWriter(socket.getOutputStream());
-			out.println("HTTP/1.1 200 OK");
-			out.println("Content-type: text/html");
-			out.println("Content-length: "+MESSAGE.length());
-			out.println();
-			out.println(MESSAGE);
-			out.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-        try {
+		try {
+			String firstLine = null;
+			HttpHeaders headers = new HttpHeaders();
+			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			try{
+				while(true){
+					String line = br.readLine();
+					if(line==null ||  line.length() == 0) break;
+					logger.debug(line);
+					if(firstLine==null){
+						firstLine = line;
+					}else{
+						headers.addHeader(line);
+					}
+				}
+				logger.info("OK");
+			}catch(MalformedHeaderException mhe){
+				logger.warn(mhe.getMessage(), mhe);
+				try {
+					PrintWriter out = new PrintWriter(socket.getOutputStream());
+					out.println("HTTP/1.1 400 Bad Request");
+					out.println("Content-type: text/html");
+					out.println("Connection: closed");
+					out.println();
+					out.println(ErrorPageRepository.getErrorPage(400));
+					out.flush();
+					socket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return;
+			}
 			socket.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 		}
-        logger.debug("Thread ended");
     }
 	
 	private static String getId(Socket s){

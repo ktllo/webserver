@@ -19,11 +19,14 @@ public class Server {
 		prop.load(new java.io.FileInputStream("web.properties"));
 		ErrorPageRepository.setReplaceSet(prop);
 		ErrorPageRepository.loadErrorPage(503,"503.html",ErrorPageType.STATIC);
+		ErrorPageRepository.loadErrorPage(400,"400.html",ErrorPageType.STATIC);
+		
 		ErrorPageRepository.loadErrorPage(404,"404.html",ErrorPageType.DYMANIC);
+		MimeTypeRepo.getInstance();
 		logger.info("Server ready");
 		while(true){
 			Socket s = ss.accept();
-			ServerBusyErrorThread.getInstance().addEntry(s);
+			new ServerThread(s).start();
 		}
 	}
 }
