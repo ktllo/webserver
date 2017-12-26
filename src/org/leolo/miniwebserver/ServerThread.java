@@ -19,9 +19,10 @@ public class ServerThread extends Thread {
 	Logger logger = LoggerFactory.getLogger(ServerThread.class);
 	private static final Marker USAGE = MarkerFactory.getMarker("USAGE");
 	private Socket socket;
+	private Server server;
 	
 	
-	ServerThread(Socket socket){
+	ServerThread(Server server,Socket socket){
 		logger.info("Connection from "+socket.getInetAddress()+"/"+socket.getPort());
 		this.setName("MWST-"+getId(socket));
 		this.socket = socket;

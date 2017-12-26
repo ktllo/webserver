@@ -10,11 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Server {
+	static Logger logger = LoggerFactory.getLogger(Server.class);
+	
 	public static void main(String [] args) throws InterruptedException, IOException{
 		
-		Logger logger = LoggerFactory.getLogger(Server.class);
-		ServerSocket ss = new ServerSocket(8080);
-		ServerBusyErrorThread.getInstance();
 		Properties prop = new Properties();
 		prop.load(new java.io.FileInputStream("web.properties"));
 		ErrorPageRepository.setReplaceSet(prop);
@@ -22,11 +21,20 @@ public class Server {
 		ErrorPageRepository.loadErrorPage(400,"400.html",ErrorPageType.STATIC);
 		
 		ErrorPageRepository.loadErrorPage(404,"404.html",ErrorPageType.DYMANIC);
+		
+		Server server = new Server();
+		server.start();
+	}
+	
+	public void start() throws IOException{
+		ServerSocket ss = new ServerSocket(8080);
+		ServerBusyErrorThread.getInstance();
+		
 		MimeTypeRepo.getInstance();
 		logger.info("Server ready");
 		while(true){
 			Socket s = ss.accept();
-			new ServerThread(s).start();
+			new ServerThread(this, s).start();
 		}
 	}
 }
