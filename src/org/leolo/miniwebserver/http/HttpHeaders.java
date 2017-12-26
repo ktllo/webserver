@@ -29,7 +29,6 @@ public class HttpHeaders {
 		}
 		String name = line.substring(0, breakpoint).trim();
 		String value = line.substring(breakpoint+1).trim();
-		logger.debug("name={};value={};",name,value);
 		if("Cookie".equals(name)){
 			StringTokenizer st = new StringTokenizer(value,";");
 			while(st.hasMoreTokens()){

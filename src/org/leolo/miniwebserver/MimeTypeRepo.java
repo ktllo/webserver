@@ -53,7 +53,6 @@ public class MimeTypeRepo {
 		Map<String, Object> jsonMap = obj.toMap();
 		for(String key:jsonMap.keySet()){
 			Entry entry = new Entry(key);
-			logger.debug("Processing type {}",key);
 			HashMap subMap = (HashMap)jsonMap.get(key);
 			for(Object subKey:subMap.keySet()){
 				if("source".equals(subKey)){
