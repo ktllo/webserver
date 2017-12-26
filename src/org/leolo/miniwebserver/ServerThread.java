@@ -6,15 +6,18 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.leolo.miniwebserver.http.HttpHeaders;
 import org.leolo.miniwebserver.http.MalformedHeaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 public class ServerThread extends Thread {
 	Logger logger = LoggerFactory.getLogger(ServerThread.class);
-	
+	private static final Marker USAGE = MarkerFactory.getMarker("USAGE");
 	private Socket socket;
 	
 	
@@ -47,14 +50,22 @@ public class ServerThread extends Thread {
 				while(true){
 					String line = br.readLine();
 					if(line==null ||  line.length() == 0) break;
-					logger.debug(line);
 					if(firstLine==null){
 						firstLine = line;
 					}else{
 						headers.addHeader(line);
 					}
 				}
-				logger.info("OK");
+				String method;
+				String requestPath;
+				try{
+					StringTokenizer st = new StringTokenizer(firstLine);
+					method = st.nextToken();
+					requestPath = st.nextToken();
+				}catch(RuntimeException re){
+					throw new MalformedHeaderException(re.getClass().getName()+":"+re.getMessage(), re);
+				}
+				logger.info("Request method is {}, path is {}", method, requestPath);
 			}catch(MalformedHeaderException mhe){
 				logger.warn(mhe.getMessage(), mhe);
 				try {

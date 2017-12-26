@@ -1,16 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
 	<Appenders>
-		
+		<RollingFile name="use" fileName="access.log" filePattern="access.%i.log">
+		    <PatternLayout>
+		        <Pattern>%d %m%n</Pattern>
+		    </PatternLayout>
+		    <Policies>
+				<SizeBasedTriggeringPolicy size="10 MB"/>
+			</Policies>
+			<DefaultRolloverStrategy max="20"/>
+		    <MarkerFilter marker="USAGE" onMatch="ACCEPT" onMismatch="DENY"/>
+		</RollingFile>
 		<Console name="STDOUT" target="SYSTEM_OUT">
 			<PatternLayout>
                 <Pattern>%d %p [%t] %m %ex%n</Pattern>
             </PatternLayout>
+            <MarkerFilter marker="USAGE" onMatch="DENY" onMismatch="ACCEPT"/>
 		</Console>
 	</Appenders>
 	<Loggers>
 		<Root level="trace">
 			<AppenderRef ref="STDOUT" level="TRACE"/>
+			<AppenderRef ref="use" level="trace"/>
 		</Root>
 	</Loggers>
 </Configuration>
