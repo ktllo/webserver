@@ -87,7 +87,7 @@ public class ErrorPageRepository {
 	
 	public enum ErrorPageType{
 		STATIC,
-		DYMANIC;
+		DYNAMIC;
 	}
 	
 	public static String getErrorPage(int errorCode){

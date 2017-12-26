@@ -3,7 +3,7 @@
 	<Appenders>
 		<RollingFile name="use" fileName="access.log" filePattern="access.%i.log">
 		    <PatternLayout>
-		        <Pattern>%d %m%n</Pattern>
+		        <Pattern>%m%n</Pattern>
 		    </PatternLayout>
 		    <Policies>
 				<SizeBasedTriggeringPolicy size="10 MB"/>

@@ -1,5 +1,6 @@
 package org.leolo.miniwebserver.http;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Vector;

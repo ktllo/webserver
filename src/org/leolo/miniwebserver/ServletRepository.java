@@ -13,6 +13,10 @@ public class ServletRepository {
 	
 	private TreeSet<Entry> repo;
 	
+	public ServletRepository(){
+		repo = new TreeSet<>();
+	}
+	
 	private class Entry implements Comparable<Entry>{
 		Class<? extends HttpServlet> serlvet;
 		Pattern urlPattern;
