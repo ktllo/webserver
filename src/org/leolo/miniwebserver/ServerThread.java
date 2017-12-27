@@ -111,6 +111,8 @@ public class ServerThread extends Thread {
 				return;
 			}
 			socket.close();
+		}catch(java.net.SocketException se){
+			//Remote probably closed the connection. Ignore
 		} catch (IOException e) {
 			try {
 				socket.close();
@@ -154,6 +156,7 @@ public class ServerThread extends Thread {
 					out.print("HTTP/1.1 200 OK");out.print(NEW_LINE);
 					out.print("Content-type: "+mime);out.print(NEW_LINE);
 					out.print("Connection: closed");out.print(NEW_LINE);
+					out.print("Content-length: "+targetFile.length());out.print(NEW_LINE);
 					out.print(NEW_LINE);
 					out.flush();
 					InputStream is = new FileInputStream(targetFile);

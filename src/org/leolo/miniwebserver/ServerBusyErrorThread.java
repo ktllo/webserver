@@ -83,11 +83,10 @@ class ServerBusyErrorThread extends Thread {
 				}
 				try {
 					PrintWriter out = new PrintWriter(s.getOutputStream());
-					out.println("HTTP/1.1 503 Service Unavailable");
-					out.println("Content-type: text/html");
-					out.println("Connection: closed");
-					out.println();
-					out.println(ErrorPageRepository.getErrorPage(503));
+					out.print("HTTP/1.1 503 Service Unavailable\r\n");
+					out.print("Content-type: text/html\r\n");
+					out.print("Connection: closed\r\n\r\n");
+					out.print(ErrorPageRepository.getErrorPage(503));
 					out.flush();
 					s.close();
 				} catch (IOException e) {
