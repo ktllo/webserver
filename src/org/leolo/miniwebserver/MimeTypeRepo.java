@@ -92,7 +92,6 @@ public class MimeTypeRepo {
 		remap("mp3","audio/mp3");
 		remap("xml","text/xml");
 		
-		
 	}
 	
 	public void remap(String ext, String mime){
@@ -116,7 +115,7 @@ public class MimeTypeRepo {
 	
 	public static String getMimeTypeByExtension(String ext){
 		Entry entry = instance.extMap.get(ext.toLowerCase());
-		return entry == null ? null : entry.typeName;
+		return entry == null ? "application/octet-stream" : entry.typeName;
 	}
 	
 	static class Entry{

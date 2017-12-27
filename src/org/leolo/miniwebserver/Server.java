@@ -22,6 +22,7 @@ public class Server {
 		ErrorPageRepository.loadErrorPage(503,"503.html",ErrorPageType.STATIC);
 		ErrorPageRepository.loadErrorPage(400,"400.html",ErrorPageType.STATIC);
 		ErrorPageRepository.loadErrorPage(404,"404.html",ErrorPageType.DYNAMIC);
+		ErrorPageRepository.loadErrorPage(403,"403.html",ErrorPageType.DYNAMIC);
 		Server server = new Server();
 		server.start();
 	}
@@ -31,8 +32,8 @@ public class Server {
 	}
 	
 	private ServletRepository servlets;
-	private String staticContentPath = "/static";
-	
+	private String staticContentPath = "./static";
+	private String defaultPage = "index.html";
 	
 	public void start() throws IOException{
 		ServerSocket ss = new ServerSocket(8080);
@@ -89,5 +90,13 @@ public class Server {
 
 	public void setStaticContentPath(String staticContentPath) {
 		this.staticContentPath = staticContentPath;
+	}
+
+	public String getDefaultPage() {
+		return defaultPage;
+	}
+
+	public void setDefaultPage(String defaultPage) {
+		this.defaultPage = defaultPage;
 	}
 }

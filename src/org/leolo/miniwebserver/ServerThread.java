@@ -2,8 +2,11 @@ package org.leolo.miniwebserver;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.URLDecoder;
@@ -27,7 +30,7 @@ public class ServerThread extends Thread {
 	private static final Marker USAGE = MarkerFactory.getMarker("USAGE");
 	private Socket socket;
 	private Server server;
-	
+	public static final int STREAM_COPY_BUFFER_SIZE = 1024;
 	private SimpleDateFormat logDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	ServerThread(Server server,Socket socket){
@@ -130,10 +133,45 @@ public class ServerThread extends Thread {
 	}
 	
 	private void processStaticRequest(String path) throws IOException{
-		logger.info("Looking for {}",path);
 		File targetFile = new File(server.getStaticContentPath()+path);
+		logger.info("Looking for {}",targetFile.getAbsolutePath());
 		if(targetFile.exists()){
-			
+			if(targetFile.getCanonicalPath().startsWith(new File(server.getStaticContentPath()).getCanonicalPath())){
+				//Passed path check
+				if(targetFile.isDirectory()){
+					if(path.endsWith("/")){
+						processStaticRequest(path+server.getDefaultPage());
+					}else{
+						processStaticRequest(path+"/"+server.getDefaultPage());
+					}
+				}else{
+					logger.info(USAGE, "{} [{}] {} 200 {}", socket.getInetAddress(), logDateFormat.format(new Date()), path, targetFile.length());
+					String extension = path.substring(path.lastIndexOf(".")+1);
+					String mime = MimeTypeRepo.getMimeTypeByExtension(extension);
+					logger.info("Ext {} is type {}", extension, mime);
+					PrintWriter out = new PrintWriter(socket.getOutputStream());
+					out.println("HTTP/1.1 200 OK");
+					out.println("Content-type: "+mime);
+					out.println("Connection: closed");
+					out.println();
+					out.flush();
+					InputStream is = new FileInputStream(targetFile);
+					this.copyToOutputStream(is , socket.getOutputStream());
+					is.close();
+				}
+			}else{
+				HashMap<Object, Object> errorMap = new HashMap<>();
+				errorMap.put("pagename", path);
+				String page = ErrorPageRepository.getErrorPage(403, errorMap);
+				logger.info(USAGE, "{} [{}] {} 403 {}", socket.getInetAddress(), logDateFormat.format(new Date()), path, page.length());
+				PrintWriter out = new PrintWriter(socket.getOutputStream());
+				out.println("HTTP/1.1 403 Forbidden");
+				out.println("Content-type: text/html");
+				out.println("Connection: closed");
+				out.println();
+				out.println(page);
+				out.flush();
+			}
 		}else{
 			HashMap<Object, Object> errorMap = new HashMap<>();
 			errorMap.put("pagename", path);
@@ -149,4 +187,19 @@ public class ServerThread extends Thread {
 		}
 	}
 	
+	private void copyToOutputStream(InputStream in, OutputStream out) throws IOException{
+		byte [] buffer = new byte [STREAM_COPY_BUFFER_SIZE];
+		int offset= 0;
+		int size = 0;
+		while(true){
+			size = in.read(buffer, 0, STREAM_COPY_BUFFER_SIZE);
+			logger.info("Offest={};size={}",offset, size);
+			if(size<=0){
+				break;
+			}
+			out.write(buffer, 0, size);
+			offset += size;
+			out.flush();
+		}
+	}
 }
