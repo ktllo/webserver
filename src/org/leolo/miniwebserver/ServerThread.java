@@ -30,7 +30,8 @@ public class ServerThread extends Thread {
 	private static final Marker USAGE = MarkerFactory.getMarker("USAGE");
 	private Socket socket;
 	private Server server;
-	public static final int STREAM_COPY_BUFFER_SIZE = 1024;
+	public static final int STREAM_COPY_BUFFER_SIZE = 4096;
+	private static final String NEW_LINE = "\r\n";
 	private SimpleDateFormat logDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	ServerThread(Server server,Socket socket){
@@ -97,11 +98,11 @@ public class ServerThread extends Thread {
 				logger.warn(mhe.getMessage(), mhe);
 				try {
 					PrintWriter out = new PrintWriter(socket.getOutputStream());
-					out.println("HTTP/1.1 400 Bad Request");
-					out.println("Content-type: text/html");
-					out.println("Connection: closed");
-					out.println();
-					out.println(ErrorPageRepository.getErrorPage(400));
+					out.print("HTTP/1.1 400 Bad Request");out.print(NEW_LINE);
+					out.print("Content-type: text/html");out.print(NEW_LINE);
+					out.print("Connection: closed");out.print(NEW_LINE);
+					out.print(NEW_LINE);
+					out.print(ErrorPageRepository.getErrorPage(400));out.print(NEW_LINE);
 					out.flush();
 					socket.close();
 				} catch (IOException e) {
@@ -150,13 +151,15 @@ public class ServerThread extends Thread {
 					String mime = MimeTypeRepo.getMimeTypeByExtension(extension);
 					logger.info("Ext {} is type {}", extension, mime);
 					PrintWriter out = new PrintWriter(socket.getOutputStream());
-					out.println("HTTP/1.1 200 OK");
-					out.println("Content-type: "+mime);
-					out.println("Connection: closed");
-					out.println();
+					out.print("HTTP/1.1 200 OK");out.print(NEW_LINE);
+					out.print("Content-type: "+mime);out.print(NEW_LINE);
+					out.print("Connection: closed");out.print(NEW_LINE);
+					out.print(NEW_LINE);
 					out.flush();
 					InputStream is = new FileInputStream(targetFile);
+					logger.info("START");
 					this.copyToOutputStream(is , socket.getOutputStream());
+					logger.info("END");
 					is.close();
 				}
 			}else{
@@ -165,11 +168,11 @@ public class ServerThread extends Thread {
 				String page = ErrorPageRepository.getErrorPage(403, errorMap);
 				logger.info(USAGE, "{} [{}] {} 403 {}", socket.getInetAddress(), logDateFormat.format(new Date()), path, page.length());
 				PrintWriter out = new PrintWriter(socket.getOutputStream());
-				out.println("HTTP/1.1 403 Forbidden");
-				out.println("Content-type: text/html");
-				out.println("Connection: closed");
-				out.println();
-				out.println(page);
+				out.print("HTTP/1.1 403 Forbidden");out.print(NEW_LINE);
+				out.print("Content-type: text/html");out.print(NEW_LINE);
+				out.print("Connection: closed");out.print(NEW_LINE);
+				out.print(NEW_LINE);
+				out.print(page);out.print(NEW_LINE);
 				out.flush();
 			}
 		}else{
@@ -178,11 +181,11 @@ public class ServerThread extends Thread {
 			String page = ErrorPageRepository.getErrorPage(404, errorMap);
 			logger.info(USAGE, "{} [{}] {} 404 {}", socket.getInetAddress(), logDateFormat.format(new Date()), path, page.length());
 			PrintWriter out = new PrintWriter(socket.getOutputStream());
-			out.println("HTTP/1.1 404 Not Found");
-			out.println("Content-type: text/html");
-			out.println("Connection: closed");
-			out.println();
-			out.println(page);
+			out.print("HTTP/1.1 404 Not Found");out.print(NEW_LINE);
+			out.print("Content-type: text/html");out.print(NEW_LINE);
+			out.print("Connection: closed");out.print(NEW_LINE);
+			out.print(NEW_LINE);
+			out.print(page);out.print(NEW_LINE);
 			out.flush();
 		}
 	}
@@ -193,7 +196,6 @@ public class ServerThread extends Thread {
 		int size = 0;
 		while(true){
 			size = in.read(buffer, 0, STREAM_COPY_BUFFER_SIZE);
-			logger.info("Offest={};size={}",offset, size);
 			if(size<=0){
 				break;
 			}
