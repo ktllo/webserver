@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class Server {
 	static Logger logger = LoggerFactory.getLogger(Server.class);
 	
-	public static void main(String [] args) throws InterruptedException, IOException{
+	public static void main(String [] args) throws InterruptedException, IOException, ClassNotFoundException{
 		
 		Properties prop = new Properties();
 		prop.load(new java.io.FileInputStream("web.properties"));
@@ -23,9 +23,13 @@ public class Server {
 		ErrorPageRepository.loadErrorPage(400,"400.html",ErrorPageType.STATIC);
 		ErrorPageRepository.loadErrorPage(404,"404.html",ErrorPageType.DYNAMIC);
 		ErrorPageRepository.loadErrorPage(403,"403.html",ErrorPageType.DYNAMIC);
+		ErrorPageRepository.loadErrorPage(8000,"500_stacktrace.html",ErrorPageType.DYNAMIC);
+		
 		Server server = new Server();
 		server.start();
 		server.addServletMapping("hello.do", org.leolo.miniwebserver.sample.SampleServlet.class);
+		server.addServletMapping("*.do", "org.leolo.miniwebserver.sample.Count", Integer.MAX_VALUE);
+		
 	}
 	
 	public Server(){

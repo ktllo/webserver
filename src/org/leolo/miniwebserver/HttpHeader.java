@@ -1,4 +1,4 @@
-package org.leolo.miniwebserver.http;
+package org.leolo.miniwebserver;
 
 public class HttpHeader {
 	

@@ -1,4 +1,4 @@
-package org.leolo.miniwebserver.http;
+package org.leolo.miniwebserver;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,9 +14,9 @@ public class HttpHeaders {
 	
 	Logger logger = LoggerFactory.getLogger(HttpHeaders.class);
 	
-	private List<Cookie> cookies;
+	List<Cookie> cookies;
 	
-	private List<HttpHeader> headers;
+	List<HttpHeader> headers;
 	
 	{
 		cookies = new Vector<>();

@@ -7,8 +7,11 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServlet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ServletRepository {
-	
+	static Logger logger = LoggerFactory.getLogger(ServletRepository.class);
 	public static final int DEFAULT_PROCESS_ORDER = 0xffff;
 	
 	private TreeSet<Entry> repo;
@@ -32,11 +35,13 @@ public class ServletRepository {
 	}
 	
 	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass, int processOrder){
+		pattern = globToRegEx(pattern==null?"":pattern);
 		Entry e = new Entry();
 		e.serlvet = servletClass;
 		e.urlPattern = Pattern.compile(pattern);
 		e.processOrder = processOrder;
 		repo.add(e);
+		logger.info("Registered {} mapping to {}, current size is {}", pattern, servletClass.getName(), repo.size());
 	}
 	
 	public void addServletMapping(String pattern, String servletClass, int processOrder)throws ClassNotFoundException{
@@ -47,12 +52,13 @@ public class ServletRepository {
 		addServletMapping(pattern, servletClass, DEFAULT_PROCESS_ORDER);
 	}
 	
-	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass) throws ClassNotFoundException{
+	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass){
 		addServletMapping(pattern, servletClass, DEFAULT_PROCESS_ORDER);
 	}
 	
 	//Base delete method 1: with matching pattern
 	public int deleteServletMapping(String pattern){
+		pattern = globToRegEx(pattern==null?"":pattern);
 		HashSet<Entry> pendingDelete = new HashSet<>();
 		for(Entry e:repo){
 			if(e.urlPattern.pattern().equals(pattern)){
@@ -77,6 +83,7 @@ public class ServletRepository {
 	
 	//Base delete method 3: with matching servlet AND pattern
 	public int deleteServletMapping(String pattern, Class<? extends HttpServlet> servlet){
+		pattern = globToRegEx(pattern==null?"":pattern);
 		HashSet<Entry> pendingDelete = new HashSet<>();
 		for(Entry e:repo){
 			if(e.urlPattern.pattern().equals(pattern) && e.serlvet.getName().equals(servlet.getName())){
@@ -102,10 +109,93 @@ public class ServletRepository {
 	
 	public Class<? extends HttpServlet> getMappedServlet(String url){
 		for(Entry e:repo){
+			logger.info("Checking pattern {}", e.urlPattern.pattern());
 			if(e.urlPattern.matcher(url).matches()){
 				return e.serlvet;
 			}
 		}
 		return null;
 	}
+	
+	private String globToRegEx(String line){
+		line = line.trim();
+	    int strLen = line.length();
+	    StringBuilder sb = new StringBuilder(strLen);
+	    boolean escaping = false;
+	    int inCurlies = 0;
+	    for (char currentChar : line.toCharArray()){
+	        switch (currentChar){
+	        case '*':
+	            if (escaping)
+	                sb.append("\\*");
+	            else
+	                sb.append(".*");
+	            escaping = false;
+	            break;
+	        case '?':
+	            if (escaping)
+	                sb.append("\\?");
+	            else
+	                sb.append('.');
+	            escaping = false;
+	            break;
+	        case '.':
+	        case '(':
+	        case ')':
+	        case '+':
+	        case '|':
+	        case '^':
+	        case '$':
+	        case '@':
+	        case '%':
+	            sb.append('\\');
+	            sb.append(currentChar);
+	            escaping = false;
+	            break;
+	        case '\\':
+	            if (escaping){
+	                sb.append("\\\\");
+	                escaping = false;
+	            }
+	            else
+	                escaping = true;
+	            break;
+	        case '{':
+	            if (escaping){
+	                sb.append("\\{");
+	            }
+	            else{
+	                sb.append('(');
+	                inCurlies++;
+	            }
+	            escaping = false;
+	            break;
+	        case '}':
+	            if (inCurlies > 0 && !escaping){
+	                sb.append(')');
+	                inCurlies--;
+	            }
+	            else if (escaping)
+	                sb.append("\\}");
+	            else
+	                sb.append("}");
+	            escaping = false;
+	            break;
+	        case ',':
+	            if (inCurlies > 0 && !escaping){
+	                sb.append('|');
+	            }
+	            else if (escaping)
+	                sb.append("\\,");
+	            else
+	                sb.append(",");
+	            break;
+	        default:
+	            escaping = false;
+	            sb.append(currentChar);
+	        }
+	    }
+	    return sb.toString();
+	}
 }
+

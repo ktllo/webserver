@@ -16,10 +16,9 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
-import org.leolo.miniwebserver.http.HttpHeaders;
-import org.leolo.miniwebserver.http.MalformedHeaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -30,11 +29,11 @@ public class ServerThread extends Thread {
 	private static final Marker USAGE = MarkerFactory.getMarker("USAGE");
 	private Socket socket;
 	private Server server;
-	public static final int STREAM_COPY_BUFFER_SIZE = 4096;
+	public static final int STREAM_COPY_BUFFER_SIZE = 32768;
 	private static final String NEW_LINE = "\r\n";
 	private SimpleDateFormat logDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
-	ServerThread(Server server,Socket socket){
+	public ServerThread(Server server,Socket socket){
 		logger.info("Connection from "+socket.getInetAddress()+"/"+socket.getPort());
 		this.setName("MWST-"+getId(socket));
 		this.socket = socket;
@@ -72,14 +71,17 @@ public class ServerThread extends Thread {
 				}
 				String method;
 				String requestPath;
+				String protocol;
 				try{
 					StringTokenizer st = new StringTokenizer(firstLine);
 					method = st.nextToken();
 					requestPath = st.nextToken();
+					protocol = st.nextToken();
 				}catch(RuntimeException re){
 					throw new MalformedHeaderException(re.getClass().getName()+":"+re.getMessage(), re);
 				}
-				logger.info("Request method is {}, path is {}", method, requestPath);
+				logger.info("Request method is {}, path is {}. Protocol is {}",
+						method, requestPath, protocol);
 				int delimPos = requestPath.indexOf("?");
 				String queryString = "";
 				if(delimPos > 0){
@@ -87,13 +89,62 @@ public class ServerThread extends Thread {
 					requestPath = requestPath.substring(0, delimPos);
 				}
 				requestPath = URLDecoder.decode(requestPath, "UTF-8");
-				Class<? extends HttpServlet> servlet = server.getMappedServlet(requestPath);
-				if(servlet != null){
+				Class<? extends HttpServlet> servletClass = server.getMappedServlet(requestPath.substring(1));
+				if(servletClass != null){
 					//Dynamic content
+					HttpServlet servlet = servletClass.newInstance();
+					HttpServletRequest request = new HttpServletRequest(socket);
+					HttpServletResponse response = new HttpServletResponse(socket);
+					
+					//Set up the request
+					
+					request.protocol = protocol;
+					request.method = method;
+					request.headers = headers;
+					
+					try {
+						servlet.service(request, response);
+						response.flushBuffer();
+					} catch (Exception e) {
+						logger.error(e.getMessage(),e);
+						if(!response.isCommitted() && server.isShowError()){
+							//TODO: Create error pageHashMap<Object, Object> errorMap = new HashMap<>();
+							HashMap<Object, Object> errorMap = new HashMap<>();
+							errorMap.put("pagename", requestPath);
+							errorMap.put("message", e.getMessage()==null?"":e.getMessage());
+							errorMap.put("stacktrace", ServerUtils.getStackTrace(e));
+							
+							String page = ErrorPageRepository.getErrorPage(8000, errorMap);
+							logger.info(USAGE, "{} [{}] {} 500 {}", socket.getInetAddress(), logDateFormat.format(new Date()), requestPath, page.length());
+							PrintWriter out = new PrintWriter(socket.getOutputStream());
+							out.print("HTTP/1.1 500 Internal Server Error");out.print(NEW_LINE);
+							out.print("Content-type: text/html");out.print(NEW_LINE);
+							out.print("Connection: closed");out.print(NEW_LINE);
+							out.print(NEW_LINE);
+							out.print(page);out.print(NEW_LINE);
+							out.flush();
+							}
+					}
+					
 				}else{
 					//Static content
 					processStaticRequest(requestPath);
 				}
+			}catch(InstantiationException|IllegalAccessException ie){
+				logger.warn(ie.getMessage(), ie);
+				try {
+					PrintWriter out = new PrintWriter(socket.getOutputStream());
+					out.print("HTTP/1.1 500 Internal Server Error");out.print(NEW_LINE);
+					out.print("Content-type: text/html");out.print(NEW_LINE);
+					out.print("Connection: closed");out.print(NEW_LINE);
+					out.print(NEW_LINE);
+					out.print(ErrorPageRepository.getErrorPage(500));out.print(NEW_LINE);
+					out.flush();
+					socket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return;
 			}catch(MalformedHeaderException mhe){
 				logger.warn(mhe.getMessage(), mhe);
 				try {
@@ -113,7 +164,7 @@ public class ServerThread extends Thread {
 			socket.close();
 		}catch(java.net.SocketException se){
 			//Remote probably closed the connection. Ignore
-		} catch (IOException e) {
+		}catch (IOException e) {
 			try {
 				socket.close();
 			} catch (IOException e1) {
@@ -207,4 +258,6 @@ public class ServerThread extends Thread {
 			out.flush();
 		}
 	}
+	
+	
 }
