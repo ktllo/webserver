@@ -25,6 +25,7 @@ public class Server {
 		ErrorPageRepository.loadErrorPage(403,"403.html",ErrorPageType.DYNAMIC);
 		Server server = new Server();
 		server.start();
+		server.addServletMapping("hello.do", org.leolo.miniwebserver.sample.SampleServlet.class);
 	}
 	
 	public Server(){
@@ -34,19 +35,34 @@ public class Server {
 	private ServletRepository servlets;
 	private String staticContentPath = "./static";
 	private String defaultPage = "index.html";
+	private int serverPort = 8080;
+	private boolean showError = true;
 	
 	public void start() throws IOException{
-		ServerSocket ss = new ServerSocket(8080);
+		ServerSocket ss = new ServerSocket(serverPort);
 		ServerBusyErrorThread.getInstance();
 		
 		MimeTypeRepo.getInstance();
 		logger.info("Server ready");
-		while(true){
-			Socket s = ss.accept();
-			new ServerThread(this, s).start();
-		}
-	}
+		new Thread(new Runnable(){
 
+			@Override
+			public void run() {
+				while(true){
+					Socket s;
+					try {
+						s = ss.accept();
+						new ServerThread(Server.this, s).start();
+					} catch (IOException e) {
+						logger.error(e.getMessage(),e);
+					}
+				}
+			}
+			
+		}).start();
+		
+	}
+	
 	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass, int processOrder) {
 		servlets.addServletMapping(pattern, servletClass, processOrder);
 	}
@@ -59,8 +75,7 @@ public class Server {
 		servlets.addServletMapping(pattern, servletClass);
 	}
 
-	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass)
-			throws ClassNotFoundException {
+	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass){
 		servlets.addServletMapping(pattern, servletClass);
 	}
 
@@ -81,6 +96,7 @@ public class Server {
 	}
 
 	Class<? extends HttpServlet> getMappedServlet(String url) {
+		logger.info("Looking for {}", url);
 		return servlets.getMappedServlet(url);
 	}
 
@@ -98,5 +114,21 @@ public class Server {
 
 	public void setDefaultPage(String defaultPage) {
 		this.defaultPage = defaultPage;
+	}
+
+	public int getServerPort() {
+		return serverPort;
+	}
+
+	public void setServerPort(int serverPort) {
+		this.serverPort = serverPort;
+	}
+
+	public boolean isShowError() {
+		return showError;
+	}
+
+	public void setShowError(boolean showError) {
+		this.showError = showError;
 	}
 }
