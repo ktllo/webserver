@@ -1,6 +1,8 @@
 package org.leolo.miniwebserver;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -56,9 +58,22 @@ public class ServerThread extends Thread {
 	public void run(){
 		logger.debug("Thread started");
 		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			int byteRead = 0;
+			while(true){
+				byte [] buf = new byte [4096];
+				logger.info("125");
+				int size = socket.getInputStream().read(buf);
+				logger.info("127");
+				baos.write(buf, 0, size);
+				byteRead += size;
+				logger.info("{} bytes read. {} in total.", size, byteRead);
+				if(byteRead >= server.getMaxRequestBodySize())
+					break;
+			}
 			String firstLine = null;
 			HttpHeaders headers = new HttpHeaders();
-			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())));
 			try{
 				while(true){
 					String line = br.readLine();
@@ -102,9 +117,30 @@ public class ServerThread extends Thread {
 					request.method = method;
 					request.headers = headers;
 					
+					if(request.getIntHeader("Content-length")>0){
+						final int BODY_SIZE = request.getIntHeader("Content-length");
+						logger.info("Expect body size {}",BODY_SIZE);
+						if(request.getIntHeader("Content-length") > BODY_SIZE){
+							PrintWriter out = new PrintWriter(socket.getOutputStream());
+							out.print("HTTP/1.1 413 Request Entity too large");out.print(NEW_LINE);
+							out.print("Content-type: text/html");out.print(NEW_LINE);
+							out.print("Connection: closed");out.print(NEW_LINE);
+							out.print(NEW_LINE);
+							out.print(ErrorPageRepository.getErrorPage(500));out.print(NEW_LINE);
+							out.flush();
+							socket.close();
+							return;
+						}else{
+							//Data length is OK
+							
+						}
+					}
+					
 					try {
+						logger.info("Calling servlet");
 						servlet.service(request, response);
 						response.flushBuffer();
+						logger.info("Finish calling servlet");
 					} catch (Exception e) {
 						logger.error(e.getMessage(),e);
 						if(!response.isCommitted() && server.isShowError()){
@@ -123,13 +159,13 @@ public class ServerThread extends Thread {
 							out.print(NEW_LINE);
 							out.print(page);out.print(NEW_LINE);
 							out.flush();
-							}
+						}
 					}
-					
 				}else{
 					//Static content
 					processStaticRequest(requestPath);
 				}
+				socket.close();
 			}catch(InstantiationException|IllegalAccessException ie){
 				logger.warn(ie.getMessage(), ie);
 				try {
@@ -161,7 +197,6 @@ public class ServerThread extends Thread {
 				}
 				return;
 			}
-			socket.close();
 		}catch(java.net.SocketException se){
 			//Remote probably closed the connection. Ignore
 		}catch (IOException e) {
