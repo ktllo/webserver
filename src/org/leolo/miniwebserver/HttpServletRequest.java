@@ -2,6 +2,7 @@ package org.leolo.miniwebserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.Collection;
@@ -9,6 +10,7 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
+import java.net.InetSocketAddress;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -24,12 +26,30 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpServletRequest implements javax.servlet.http.HttpServletRequest {
-	
+	private Logger logger = LoggerFactory.getLogger(HttpServletRequest.class);
 	private java.net.Socket socket;
+	private ServletInputStream stream;
+	private Reader reader;
+	private enum InputMode{
+		UNBINDED,
+		STREAM,
+		READER;
+	}
 	
+	private InputMode inputMode = InputMode.UNBINDED;
+	private int CONTENT_LENGTH;
 	HttpServletRequest(java.net.Socket socket){
 		this.socket = socket;
+		try {
+			CONTENT_LENGTH = socket.getInputStream().available();
+		} catch (IOException e) {
+			logger.error(e.getMessage(),e);
+			CONTENT_LENGTH = -1;
+		}
 	}
 	
 	@Override
@@ -58,26 +78,28 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 
 	@Override
 	public int getContentLength() {
-		// TODO Auto-generated method stub
-		return -1;
+		return CONTENT_LENGTH;
 	}
 
 	@Override
 	public long getContentLengthLong() {
-		// TODO Auto-generated method stub
-		return -1;
+		return CONTENT_LENGTH;
 	}
 
 	@Override
 	public String getContentType() {
-		// TODO Auto-generated method stub
-		return null;
+		return getHeader("Content-type");
 	}
 
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		synchronized(this){
+			if(inputMode == InputMode.UNBINDED){
+				inputMode = InputMode.STREAM;
+				this.stream = new ServletInputStreamImpl(socket);
+			}
+			return stream;
+		}
 	}
 
 	@Override
@@ -118,13 +140,12 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 
 	@Override
 	public String getServerName() {
-		return null;
+		return socket.getLocalAddress().getHostName();
 	}
 
 	@Override
 	public int getServerPort() {
-		// TODO Auto-generated method stub
-		return 0;
+		return socket.getLocalPort();
 	}
 
 	@Override
@@ -136,13 +157,12 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 	@Override
 	public String getRemoteAddr() {
 		// TODO Auto-generated method stub
-		return socket.getRemoteSocketAddress().toString();
+		return ((InetSocketAddress)socket.getRemoteSocketAddress()).toString().replace("/", "");
 	}
 
 	@Override
 	public String getRemoteHost() {
-		// TODO Auto-generated method stub
-		return null;
+		return ((InetSocketAddress)socket.getRemoteSocketAddress()).getHostName();
 	}
 
 	@Override
@@ -159,7 +179,7 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 
 	@Override
 	public Locale getLocale() {
-		// TODO Auto-generated method stub
+		logger.debug("Accept-Language ={}", this.getHeader("Accept-Language"));
 		return null;
 	}
 

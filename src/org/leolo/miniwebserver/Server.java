@@ -41,6 +41,7 @@ public class Server {
 	private String defaultPage = "index.html";
 	private int serverPort = 8080;
 	private boolean showError = true;
+	private int maxRequestBodySize = 10485760; //10MiB
 	
 	public void start() throws IOException{
 		ServerSocket ss = new ServerSocket(serverPort);
@@ -134,5 +135,13 @@ public class Server {
 
 	public void setShowError(boolean showError) {
 		this.showError = showError;
+	}
+
+	public int getMaxRequestBodySize() {
+		return maxRequestBodySize;
+	}
+
+	public void setMaxRequestBodySize(int maxRequestBodySize) {
+		this.maxRequestBodySize = maxRequestBodySize;
 	}
 }
