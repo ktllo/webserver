@@ -9,6 +9,9 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpServletResponse implements javax.servlet.http.HttpServletResponse {
 	
 	protected java.net.Socket socket;
@@ -16,6 +19,8 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 	private OutputMode outputMode = OutputMode.UNBINDED;
 	
 	private ServletPrintWriter printWriter =  null;
+	
+	private static final Logger logger = LoggerFactory.getLogger(HttpServletResponse.class);
 	
 	private enum OutputMode{
 		OUTPUT_STREAM,
@@ -108,14 +113,24 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 
 	@Override
 	public void resetBuffer() {
-		// TODO Auto-generated method stub
-
+		if(commit){
+			throw new IllegalStateException("Response is committed");
+		}
+		if(outputMode == OutputMode.PRINT_WRITER){
+			this.printWriter.close();
+			outputMode = OutputMode.UNBINDED;
+			try {
+				this.getWriter();
+			} catch (IOException e) {
+			}
+		}
 	}
 
 	private static final String NEW_LINE = "\r\n";
 	protected synchronized void _commit(){
+		
 		if(!commit){
-			
+			logger.debug("Committing");
 			try {
 				PrintWriter out = new PrintWriter(socket.getOutputStream());
 				out.print("HTTP/1.1 200 OK");out.print(NEW_LINE);
@@ -124,10 +139,12 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 				out.print(NEW_LINE);
 				out.flush();
 			} catch (IOException e) {
-				
+				logger.error(e.getMessage(),e);
 			}
 			commit = true;
+			logger.debug("Committed");
 		}
+		
 	}
 	
 	private boolean commit = false;
