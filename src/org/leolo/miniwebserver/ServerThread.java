@@ -59,17 +59,28 @@ public class ServerThread extends Thread {
 		logger.debug("Thread started");
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			InputStream input = socket.getInputStream();
 			int byteRead = 0;
 			while(true){
 				byte [] buf = new byte [4096];
-				logger.info("125");
-				int size = socket.getInputStream().read(buf);
-				logger.info("127");
+				int size = input.read(buf);
 				baos.write(buf, 0, size);
 				byteRead += size;
 				logger.info("{} bytes read. {} in total.", size, byteRead);
-				if(byteRead >= server.getMaxRequestBodySize())
+				if(input.available() == 0)
 					break;
+				if(byteRead >= server.getMaxRequestBodySize()){
+					logger.info("Request too large");
+					PrintWriter out = new PrintWriter(socket.getOutputStream());
+					out.print("HTTP/1.1 413 Request Entity too large");out.print(NEW_LINE);
+					out.print("Content-type: text/html");out.print(NEW_LINE);
+					out.print("Connection: closed");out.print(NEW_LINE);
+					out.print(NEW_LINE);
+					out.print(ErrorPageRepository.getErrorPage(503));out.print(NEW_LINE);
+					out.flush();
+					socket.close();
+					return;
+				}
 			}
 			String firstLine = null;
 			HttpHeaders headers = new HttpHeaders();
@@ -84,6 +95,7 @@ public class ServerThread extends Thread {
 						headers.addHeader(line);
 					}
 				}
+				br.close();
 				String method;
 				String requestPath;
 				String protocol;
@@ -132,7 +144,8 @@ public class ServerThread extends Thread {
 							return;
 						}else{
 							//Data length is OK
-							
+							logger.info("Total request size is {}, body size is {}, offset {}", baos.size(), BODY_SIZE, baos.size()-BODY_SIZE);
+							ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray(), baos.size()-BODY_SIZE, BODY_SIZE);
 						}
 					}
 					

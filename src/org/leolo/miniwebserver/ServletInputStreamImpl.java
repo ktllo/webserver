@@ -14,12 +14,8 @@ public class ServletInputStreamImpl extends javax.servlet.ServletInputStream {
 	private InputStream stream;
 	private static Logger logger = LoggerFactory.getLogger(ServletInputStreamImpl.class);
 	
-	ServletInputStreamImpl(Socket socket){
-		try {
-			stream = socket.getInputStream();
-		} catch (IOException e) {
-			logger.error(e.getMessage(),e);
-		}
+	ServletInputStreamImpl(InputStream stream){
+		this.stream =stream;
 	}
 	
 	@Override

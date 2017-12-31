@@ -1,7 +1,9 @@
 package org.leolo.miniwebserver;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
@@ -90,13 +92,19 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 	public String getContentType() {
 		return getHeader("Content-type");
 	}
-
+	
+	InputStream data;
+	static final byte [] EMPTY_BYTE_ARRAY = new byte[0];
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
 		synchronized(this){
 			if(inputMode == InputMode.UNBINDED){
 				inputMode = InputMode.STREAM;
-				this.stream = new ServletInputStreamImpl(socket);
+				if(data!=null){
+					this.stream = new ServletInputStreamImpl(data);
+				}else{
+					this.stream = new ServletInputStreamImpl(new ByteArrayInputStream(EMPTY_BYTE_ARRAY,0,0));
+				}
 			}
 			return stream;
 		}
