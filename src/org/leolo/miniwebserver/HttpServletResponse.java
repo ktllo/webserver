@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Vector;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -125,18 +126,22 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 			}
 		}
 	}
-
+	private int responseCode = 200;
+	private String statusMessage = "OK";
 	private static final String NEW_LINE = "\r\n";
 	protected synchronized void _commit(){
 		
 		if(!commit){
 			logger.debug("Committing");
 			try {
-				PrintWriter out = new PrintWriter(socket.getOutputStream());
-				out.print("HTTP/1.1 200 OK");out.print(NEW_LINE);
-				out.print("Content-type: "+this.getContentType());out.print(NEW_LINE);
-				out.print("Connection: closed");out.print(NEW_LINE);
-				out.print(NEW_LINE);
+				PrintWriter out = new ServletPrintWriter(socket.getOutputStream());
+				out.print("HTTP/1.1 ");
+				out.print(responseCode);
+				out.print(" ");
+				out.println(statusMessage);
+				out.println("Content-type: "+this.getContentType());
+				out.println("Connection: closed");
+				out.println();
 				out.flush();
 			} catch (IOException e) {
 				logger.error(e.getMessage(),e);
@@ -172,11 +177,12 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
+	private Vector<Cookie> cookies = new Vector<>();
+	
 	@Override
 	public void addCookie(Cookie cookie) {
-		// TODO Auto-generated method stub
-
+		cookies.add(cookie);
 	}
 
 	@Override
@@ -265,8 +271,7 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 
 	@Override
 	public void setStatus(int sc) {
-		// TODO Auto-generated method stub
-
+		responseCode = sc;
 	}
 
 	@Override

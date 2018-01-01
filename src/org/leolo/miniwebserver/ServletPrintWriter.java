@@ -8,14 +8,21 @@ import java.io.PrintWriter;
 public class ServletPrintWriter extends PrintWriter {
 
 	private HttpServletResponse response;
-	
+	private boolean attachedToResponse = false;
 	public ServletPrintWriter(HttpServletResponse response) throws IOException {
 		super(response.socket.getOutputStream());
 		this.response = response;
+		attachedToResponse = true;
 	}
 	
+	public ServletPrintWriter(OutputStream outputStream) {
+		super(outputStream);
+	}
+
 	public synchronized void flush(){
-		response._commit();
+		if(attachedToResponse){
+			response._commit();
+		}
 		super.flush();
 	}
 	private static final String NEW_LINE = "\r\n";
