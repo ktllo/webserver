@@ -1,8 +1,11 @@
 package org.leolo.miniwebserver.sample;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.Enumeration;
+import java.util.Map;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -59,20 +62,50 @@ public class Count extends HttpServlet {
 				}
 				out.println("</ol>");
 				out.println("</li>");
-			}logger.info("Hdr OK");out.flush();
+			}
+			out.print("</ul>");
+			Map<String, String[]> param = request.getParameterMap();
+			if(param.size()>0){
+				out.println("<h2>Parameters</h2>");
+				out.println("<ul>");
+				for(String key:param.keySet()){
+					out.print("<li>");
+					out.print(key);
+					out.print("<ol>");
+					for(String s:param.get(key)){
+						out.print("<li>");
+						out.print(s);
+						out.print("</li>");
+					}
+					out.print("</ol>");
+					out.print("</li>");
+				}
+				out.print("</ul>");
+			}
 			out.println("<h1>Sample Form</h1>");
-			out.println("<form action=\"/upload.do\" method=\"post\" enctype=\"multipart/form-data\">");
-			out.println("<input type=\"text\" name=\"description\" value=\"some text\">");
+			out.println("<form action=\"/upload.do?p=0\" method=\"post\" enctype=\"multipart/form-data\">");
+			out.println("<input type=\"text\" name=\"description\" value=\"some text1\">");
+			out.println("<input type=\"text\" name=\"description2\" value=\"some text2\">");
+			
 			out.println("<input type=\"file\" name=\"myFile\">");
 			out.println("<button type=\"submit\">Submit</button>");
 			out.println("</form>");
+			out.println("<h1>Sample Form 2</h1>");
+			out.println("<form action=\"/upload.do?p=1\" method=\"post\">");
+			out.println("<input type=\"text\" name=\"description\" value=\"some text3\">");
+			out.println("<input type=\"text\" name=\"description2\" value=\"some text4\">");
+			
+			out.println("<button type=\"submit\">Submit</button>");
+			out.println("</form>");
 			if(request.getContentLength()>0){
-				out.println("<h1>POST data</h1>");
-				int _size = 0;
+				out.println("<h1>POST data</h1><pre>");
+				BufferedReader br= new BufferedReader(new InputStreamReader(request.getInputStream()));
 				while(true){
-					byte  [] buf =new byte[4096];
-					int read = request.getInputStream().read(buf);
+					String line = br.readLine();
+					if(line==null) break;
+					out.println(line);
 				}
+				out.println("</pre>");
 			}
 			out.println("</body>");
 			out.println("</html>");

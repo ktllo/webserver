@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
@@ -27,7 +28,7 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 public class ServerThread extends Thread {
-	Logger logger = LoggerFactory.getLogger(ServerThread.class);
+	private static final Logger logger = LoggerFactory.getLogger(ServerThread.class);
 	private static final Marker USAGE = MarkerFactory.getMarker("USAGE");
 	private Socket socket;
 	private Server server;
@@ -128,10 +129,9 @@ public class ServerThread extends Thread {
 					request.protocol = protocol;
 					request.method = method;
 					request.headers = headers;
-					
+					final int BODY_SIZE = request.getIntHeader("Content-length");
+					logger.info("Expect body size {}",BODY_SIZE);
 					if(request.getIntHeader("Content-length")>0){
-						final int BODY_SIZE = request.getIntHeader("Content-length");
-						logger.info("Expect body size {}",BODY_SIZE);
 						if(request.getIntHeader("Content-length") > BODY_SIZE){
 							PrintWriter out = new PrintWriter(socket.getOutputStream());
 							out.print("HTTP/1.1 413 Request Entity too large");out.print(NEW_LINE);
@@ -146,9 +146,26 @@ public class ServerThread extends Thread {
 							//Data length is OK
 							logger.info("Total request size is {}, body size is {}, offset {}", baos.size(), BODY_SIZE, baos.size()-BODY_SIZE);
 							ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray(), baos.size()-BODY_SIZE, BODY_SIZE);
+							request.data = bais;
+							request.setContentLength(BODY_SIZE);
 						}
 					}
-					
+					//parse GET/POST param
+					logger.info("Query String (GET) is {}",queryString);
+					parseParam(queryString, request);
+					if("application/x-www-form-urlencoded".equals(request.getContentType())){
+						BufferedReader bodyReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray(), baos.size()-BODY_SIZE, BODY_SIZE)));
+						StringBuilder sb = new StringBuilder();
+						while(true){
+							String line = bodyReader.readLine();
+							if(line == null){
+								break;
+							}
+							sb.append(line);
+						}
+						br.close();
+						parseParam(sb.toString(), request);
+					}
 					try {
 						logger.info("Calling servlet");
 						servlet.service(request, response);
@@ -294,7 +311,6 @@ public class ServerThread extends Thread {
 	
 	private void copyToOutputStream(InputStream in, OutputStream out) throws IOException{
 		byte [] buffer = new byte [STREAM_COPY_BUFFER_SIZE];
-		int offset= 0;
 		int size = 0;
 		while(true){
 			size = in.read(buffer, 0, STREAM_COPY_BUFFER_SIZE);
@@ -302,10 +318,24 @@ public class ServerThread extends Thread {
 				break;
 			}
 			out.write(buffer, 0, size);
-			offset += size;
 			out.flush();
 		}
 	}
 	
+	private static void parseParam(String data, HttpServletRequest request) throws UnsupportedEncodingException{
+		StringTokenizer st = new StringTokenizer(data,"&");
+		while(st.hasMoreTokens()){
+			String pair = st.nextToken();
+			int split = pair.indexOf("=");
+			if(split > 0){
+				String name = pair.substring(0, split);
+				String value = pair.substring(split+1);
+				value = URLDecoder.decode(value, "UTF-8");
+				request.addParameter(name, value);
+			}else{
+				request.addParameter(pair, null);
+			}
+		}
+	}
 	
 }

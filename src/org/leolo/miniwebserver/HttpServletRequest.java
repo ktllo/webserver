@@ -4,11 +4,15 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
@@ -35,7 +39,7 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 	private Logger logger = LoggerFactory.getLogger(HttpServletRequest.class);
 	private java.net.Socket socket;
 	private ServletInputStream stream;
-	private Reader reader;
+	private BufferedReader reader;
 	private enum InputMode{
 		UNBINDED,
 		STREAM,
@@ -43,15 +47,13 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 	}
 	
 	private InputMode inputMode = InputMode.UNBINDED;
-	private int CONTENT_LENGTH;
+	private int CONTENT_LENGTH = 0;
+	void setContentLength(int length){
+		CONTENT_LENGTH = length;
+	}
 	HttpServletRequest(java.net.Socket socket){
 		this.socket = socket;
-		try {
-			CONTENT_LENGTH = socket.getInputStream().available();
-		} catch (IOException e) {
-			logger.error(e.getMessage(),e);
-			CONTENT_LENGTH = -1;
-		}
+		
 	}
 	
 	@Override
@@ -112,26 +114,48 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 
 	@Override
 	public String getParameter(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		List<String> values = paramMap.get(name);
+		if(values==null){
+			return null;
+		}
+		return values.get(0);
 	}
 
 	@Override
 	public Enumeration<String> getParameterNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return new Enumeration<String>(){
+			Iterator<String> iData = paramMap.keySet().iterator();
+			@Override
+			public boolean hasMoreElements() {
+				return iData.hasNext();
+			}
+
+			@Override
+			public String nextElement() {
+				return iData.next();
+			}
+			
+		};
 	}
 
 	@Override
 	public String[] getParameterValues(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		List<String> values = paramMap.get(name);
+		if(values==null){
+			return null;
+		}
+		String [] arr = new String[values.size()];
+		values.toArray(arr);
+		return arr;
 	}
 
 	@Override
 	public Map<String, String[]> getParameterMap() {
-		// TODO Auto-generated method stub
-		return null;
+		HashMap<String, String []> map = new HashMap<>();
+		for(String key:paramMap.keySet()){
+			map.put(key, getParameterValues(key));
+		}
+		return map;
 	}
 	String protocol;
 	
@@ -158,8 +182,17 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 
 	@Override
 	public BufferedReader getReader() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		synchronized(this){
+			if(inputMode == InputMode.UNBINDED){
+				inputMode = InputMode.READER;
+				if(data!=null){
+					this.reader = new BufferedReader(new InputStreamReader(new ServletInputStreamImpl(data)));
+				}else{
+					this.reader = new BufferedReader(new InputStreamReader(new ServletInputStreamImpl(new ByteArrayInputStream(EMPTY_BYTE_ARRAY,0,0))));
+				}
+			}
+			return reader;
+		}
 	}
 
 	@Override
@@ -491,5 +524,16 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
+	private HashMap<String,List<String>> paramMap = new HashMap<>();
+	
+	void addParameter(String name, String value){
+		if(paramMap.containsKey(name)){
+			paramMap.get(name).add(value);
+		}else{
+			Vector<String> v = new Vector<>();
+			v.add(value);
+			paramMap.put(name, v);
+		}
+	}
 }
