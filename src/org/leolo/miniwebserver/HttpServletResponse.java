@@ -3,6 +3,7 @@ package org.leolo.miniwebserver;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Vector;
 
@@ -139,6 +140,9 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 				out.print(responseCode);
 				out.print(" ");
 				out.println(statusMessage);
+				for(Cookie cookie:cookies){
+					out.println(this.getCookieHeader(cookie));
+				}
 				out.println("Content-type: "+this.getContentType());
 				out.println("Connection: closed");
 				out.println();
@@ -150,6 +154,29 @@ public class HttpServletResponse implements javax.servlet.http.HttpServletRespon
 			logger.debug("Committed");
 		}
 		
+	}
+	
+	private String getCookieHeader(Cookie cookie){
+		StringBuffer sb = new StringBuffer();
+		sb.append("Set-Cookie: ").append(cookie.getName()).append("=").append(cookie.getValue());
+		if(cookie.getMaxAge() > 0){
+			Date expire  = new Date();
+			expire.setTime(expire.getTime()+cookie.getMaxAge()*1000);
+			sb.append("; Expires=").append(ServerUtils.getHttpTime(expire));
+		}
+		if(cookie.getSecure()){
+			sb.append("; Secure");
+		}
+		if(cookie.isHttpOnly()){
+			sb.append("; HttpOnly");
+		}
+		if(cookie.getDomain()!=null){
+			sb.append("; Domain=").append(cookie.getDomain());
+		}
+		if(cookie.getPath()!=null){
+			sb.append("; Path=").append(cookie.getPath());
+		}
+		return sb.toString();
 	}
 	
 	private boolean commit = false;

@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.Map;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,7 +28,7 @@ public class Count extends HttpServlet {
 		logger.info("Content-length is {}", request.getContentLength());
 		
 		try {
-			
+			response.addCookie(new Cookie("SES","123"));
 			PrintWriter out = response.getWriter();
 			out.println("<!DOCTYPE html>");
 			out.println("<html>");
@@ -81,6 +82,11 @@ public class Count extends HttpServlet {
 					out.print("</li>");
 				}
 				out.print("</ul>");
+			}
+			out.println("<h1>Cookies</h1>");
+			for(Cookie c:request.getCookies()){
+				out.print(c.toString());
+				out.println("<br/>");
 			}
 			out.println("<h1>Sample Form</h1>");
 			out.println("<form action=\"/upload.do?p=0\" method=\"post\" enctype=\"multipart/form-data\">");

@@ -1,5 +1,11 @@
 package org.leolo.miniwebserver;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
 public class ServerUtils {
 	static String getStackTrace(Throwable t){
 		final String NEW_LINE = "<br>\r\n";
@@ -93,5 +99,14 @@ public class ServerUtils {
 		case 511  : return "Network Authentication Required";
 		}
 		return "";
+	}
+	private static Calendar calendar = Calendar.getInstance();
+	private static SimpleDateFormat dateFormat = new SimpleDateFormat(
+        "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+	static{
+		dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
+	public static String getHttpTime(Date time){
+		return dateFormat.format(calendar.getTime());
 	}
 }

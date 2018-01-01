@@ -315,11 +315,11 @@ public class HttpServletRequest implements javax.servlet.http.HttpServletRequest
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public Cookie[] getCookies() {
 		// TODO Auto-generated method stub
-		return null;
+		return headers.getCookies();
 	}
 
 	@Override

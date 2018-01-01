@@ -45,4 +45,10 @@ public class HttpHeaders {
 			headers.add(new HttpHeader(name, value));
 		}
 	}
+	
+	Cookie[] getCookies(){
+		Cookie [] c = new Cookie[cookies.size()];
+		cookies.toArray(c);
+		return c;
+	}
 }
