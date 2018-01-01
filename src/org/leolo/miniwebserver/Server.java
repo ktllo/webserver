@@ -24,6 +24,7 @@ public class Server {
 		ErrorPageRepository.loadErrorPage(404,"404.html",ErrorPageType.DYNAMIC);
 		ErrorPageRepository.loadErrorPage(403,"403.html",ErrorPageType.DYNAMIC);
 		ErrorPageRepository.loadErrorPage(8000,"500_stacktrace.html",ErrorPageType.DYNAMIC);
+		ErrorPageRepository.loadErrorPage(-1,"default.html",ErrorPageType.DYNAMIC);
 		
 		Server server = new Server();
 		server.start();

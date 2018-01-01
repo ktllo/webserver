@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -93,7 +94,7 @@ public class ErrorPageRepository {
 	public static String getErrorPage(int errorCode){
 		Entry e = repo.get(new Integer(errorCode));
 		if(e == null){
-			throw new RuntimeException("No such error page");
+			return getDefaultErrorPage(errorCode, null);
 		}
 		return e.data.toString();
 	}
@@ -101,7 +102,7 @@ public class ErrorPageRepository {
 	public static String getErrorPage(int errorCode, Map<Object, Object> rSet){
 		Entry e = repo.get(new Integer(errorCode));
 		if(e == null){
-			throw new RuntimeException("No such error page");
+			return getDefaultErrorPage(errorCode, rSet);
 		}
 		if(e.type == ErrorPageType.STATIC){
 			return e.data.toString();
@@ -126,5 +127,33 @@ public class ErrorPageRepository {
 		return sData;
 	}
 	
+	private static String getDefaultErrorPage(int errorCode, Map<Object, Object> rSet){
+		Entry e = repo.get(new Integer(-1));
+		if(e == null){
+			throw new RuntimeException("No such error page");
+		}
+		if(e.type == ErrorPageType.STATIC){
+			return e.data.toString();
+		}
+		String sData = e.data.toString();
+		//Step 2: Replace the variables
+		if(rSet == null){
+			rSet = new HashMap<>();
+		}
+		rSet.put("_ECode", Integer.toString(errorCode));
+		rSet.put("_EMsg", ServerUtils.getResponseCodeDescription(errorCode));
+		for(Object key:rSet.keySet()){
+			String var = "${"+key+"}";
+			if(rSet.get(key)==null){
+				logger.warn("{} has null empty", key);
+				continue;
+			}
+			logger.debug("{} -> {}",var,rSet.get(key).toString());
+			sData = sData.replace(var, rSet.get(key).toString());
+		}
+		logger.info("Finished replacing variable, old size {}, new size {}", e.data.length(), sData.length());
 	
+		//Step 3: Register the page
+		return sData;
+	}
 }
