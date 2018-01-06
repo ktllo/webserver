@@ -104,7 +104,9 @@ public class ServletRepository {
 		}else if(pattern != null && servletClass == null){
 			return deleteServletMapping(pattern);
 		}
-		return 0;
+		int removed = repo.size();
+		repo.clear();
+		return removed;
 	}
 	
 	public Class<? extends HttpServlet> getMappedServlet(String url){

@@ -32,6 +32,9 @@ public class Server {
 		
 	}
 	
+	/**
+	 * Creates a default instance of the server.
+	 */
 	public Server(){
 		servlets = new ServletRepository();
 	}
@@ -42,7 +45,10 @@ public class Server {
 	private int serverPort = 8080;
 	private boolean showError = true;
 	private int maxRequestBodySize = 10485760; //10MiB
-	
+	/**
+	 * Start the server with the current configuration.
+	 * @throws IOException The Server cannot be started because of IO exceptions
+	 */
 	public void start() throws IOException{
 		ServerSocket ss = new ServerSocket(serverPort);
 		ServerBusyErrorThread.getInstance();
@@ -68,34 +74,82 @@ public class Server {
 		
 	}
 	
+	/**
+	 * Maps a new Servlet to the server.
+	 * 
+	 * This operation can be performed after the server is started.
+	 * @param pattern The URL pattern which will trigger the servlet
+	 * @param servletClass The servlet Class object. Usually obtained by <code>MyServlet.class</code>
+	 * @param processOrder The priority for this servlet to be executed. The smaller the <code>processOrder</code> is,
+	 * the higher priority this entry is.
+	 */
 	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass, int processOrder) {
 		servlets.addServletMapping(pattern, servletClass, processOrder);
 	}
-
+	/**
+	 * Maps a new Servlet to the server.
+	 * 
+	 * This operation can be performed after the server is started.
+	 * @param pattern The URL pattern which will trigger the servlet
+	 * @param servletClass The fully qualified name for the servlet
+	 * @param processOrder The priority for this servlet to be executed. The smaller the <code>processOrder</code> is,
+	 * the higher priority this entry is.
+	 */
 	public void addServletMapping(String pattern, String servletClass, int processOrder) throws ClassNotFoundException {
 		servlets.addServletMapping(pattern, servletClass, processOrder);
 	}
-
+	/**
+	 * Maps a new Servlet to the server with default priority.
+	 * 
+	 * This operation can be performed after the server is started.
+	 * @param pattern The URL pattern which will trigger the servlet
+	 * @param servletClass The servlet Class object. Usually obtained by <code>MyServlet.class</code>
+	 */
 	public void addServletMapping(String pattern, String servletClass) throws ClassNotFoundException {
 		servlets.addServletMapping(pattern, servletClass);
 	}
-
+	/**
+	 * Maps a new Servlet to the server with default priority.
+	 * 
+	 * This operation can be performed after the server is started.
+	 * @param pattern The URL pattern which will trigger the servlet
+	 * @param servletClass The fully qualified name for the servlet
+	 */
 	public void addServletMapping(String pattern, Class<? extends HttpServlet> servletClass){
 		servlets.addServletMapping(pattern, servletClass);
 	}
-
+	
+	/**
+	 * Delete all servlet mapping with the given URL pattern
+	 * @param pattern The URL pattern
+	 * @return  number of mapping entry removed
+	 */
 	public int deleteServletMapping(String pattern) {
 		return servlets.deleteServletMapping(pattern);
 	}
-
+	/**
+	 * Delete all servlet mapping with the given class
+	 * @param servlet The servlet Class object. Usually obtained by <code>MyServlet.class</code>
+	 * @return  number of mapping entry removed
+	 */
 	public int deleteServletMapping(Class<? extends HttpServlet> servlet) {
 		return servlets.deleteServletMapping(servlet);
 	}
-
+	/**
+	 * Delete all servlet mapping with matching URL pattern and servlet class
+	 * @param pattern The URL pattern
+	 * @param servlet The servlet Class object. Usually obtained by <code>MyServlet.class</code>
+	 * @return  number of mapping entry removed
+	 */
 	public int deleteServletMapping(String pattern, Class<? extends HttpServlet> servlet) {
 		return servlets.deleteServletMapping(pattern, servlet);
 	}
-
+	/**
+	 * Delete all servlet mapping with matching URL pattern and servlet class
+	 * @param pattern The URL pattern, <code>null</code> if this URL pattern should be ignored
+	 * @param servlet The fully qualified name for the servlet, <code>null</code> if class name should be ignored
+	 * @return  number of mapping entry removed
+	 */
 	public int deleteServletMapping(String pattern, String servlet) throws ClassNotFoundException {
 		return servlets.deleteServletMapping(pattern, servlet);
 	}
