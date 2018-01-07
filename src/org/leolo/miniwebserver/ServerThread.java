@@ -117,7 +117,12 @@ public class ServerThread extends Thread {
 					requestPath = requestPath.substring(0, delimPos);
 				}
 				requestPath = URLDecoder.decode(requestPath, "UTF-8");
-				Class<? extends HttpServlet> servletClass = server.getMappedServlet(requestPath.substring(1));
+				//Get high priority mapping first
+				Class<? extends HttpServlet> servletClass = server.getMappedServlet(requestPath.substring(1), ServletRepository.MappingSearchMode.UPPER);
+				File f = getStaticFile(requestPath);
+				if(servletClass==null && f == null){
+					servletClass = server.getMappedServlet(requestPath.substring(1), ServletRepository.MappingSearchMode.LOWER);
+				}
 				if(servletClass != null){
 					//Dynamic content
 					HttpServlet servlet = servletClass.newInstance();
@@ -251,6 +256,26 @@ public class ServerThread extends Thread {
 		return sid;
 	}
 	
+	private File getStaticFile(String path) throws IOException{
+		File targetFile = new File(server.getStaticContentPath()+path);
+		logger.info("Looking for {}",targetFile.getAbsolutePath());
+		if(targetFile.exists()){
+			if(targetFile.getCanonicalPath().startsWith(new File(server.getStaticContentPath()).getCanonicalPath())){
+				//Passed path check
+				if(targetFile.isDirectory()){
+					if(path.endsWith("/")){
+						return getStaticFile(path+server.getDefaultPage());
+					}else{
+						return getStaticFile(path+"/"+server.getDefaultPage());
+					}
+				}
+			}
+			return targetFile;
+		}
+		return null;
+	}
+	
+	@Deprecated
 	private void processStaticRequest(String path) throws IOException{
 		File targetFile = new File(server.getStaticContentPath()+path);
 		logger.info("Looking for {}",targetFile.getAbsolutePath());

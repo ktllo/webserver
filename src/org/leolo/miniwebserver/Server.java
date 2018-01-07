@@ -27,8 +27,8 @@ public class Server {
 		
 		Server server = new Server();
 		server.start();
-		server.addServletMapping("hello.do", org.leolo.miniwebserver.sample.SampleServlet.class);
-		server.addServletMapping("*.do", "org.leolo.miniwebserver.sample.Count", Integer.MAX_VALUE);
+		server.addServletMapping("hello.do", org.leolo.miniwebserver.sample.SampleServlet.class, 50);
+		server.addServletMapping("*", "org.leolo.miniwebserver.sample.Count", Integer.MAX_VALUE);
 		
 	}
 	
