@@ -11,10 +11,22 @@ import org.leolo.miniwebserver.ErrorPageRepository.ErrorPageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The main class for the miniwebserver.
+ * 
+ * 
+ * @author leolo
+ *
+ */
 public class Server {
 	static Logger logger = LoggerFactory.getLogger(Server.class);
 	
-	public static void main(String [] args) throws InterruptedException, IOException, ClassNotFoundException{
+	/**
+	 * Sample program to start the server
+	 * @param args Parameter from command line
+	 * @throws Exception Exception
+	 */
+	public static void main(String [] args) throws Exception{
 		
 		Properties prop = new Properties();
 		prop.load(new java.io.FileInputStream("web.properties"));
@@ -28,8 +40,8 @@ public class Server {
 		
 		Server server = new Server();
 		server.start();
-		server.addServletMapping("hello.do", org.leolo.miniwebserver.sample.SampleServlet.class);
-		server.addServletMapping("*.do", "org.leolo.miniwebserver.sample.Count", Integer.MAX_VALUE);
+		server.addServletMapping("hello.do", org.leolo.miniwebserver.sample.SampleServlet.class, 50);
+		server.addServletMapping("*", "org.leolo.miniwebserver.sample.Count", Integer.MAX_VALUE);
 		
 	}
 	
@@ -46,6 +58,7 @@ public class Server {
 	private int serverPort = 8080;
 	private boolean showError = true;
 	private int maxRequestBodySize = 10485760; //10MiB
+	
 	/**
 	 * Start the server with the current configuration.
 	 * @throws IOException The Server cannot be started because of IO exceptions
@@ -95,22 +108,24 @@ public class Server {
 	 * @param servletClass The fully qualified name for the servlet
 	 * @param processOrder The priority for this servlet to be executed. The smaller the <code>processOrder</code> is,
 	 * the higher priority this entry is.
+	 * @throws ClassNotFoundException The given class is invalid
 	 */
 	public void addServletMapping(String pattern, String servletClass, int processOrder) throws ClassNotFoundException {
 		servlets.addServletMapping(pattern, servletClass, processOrder);
 	}
 	/**
-	 * Maps a new Servlet to the server with default priority.
+	 * Maps a new Servlet to the server with {@link ServletRepository#DEFAULT_PROCESS_ORDER default priority}.
 	 * 
 	 * This operation can be performed after the server is started.
 	 * @param pattern The URL pattern which will trigger the servlet
 	 * @param servletClass The servlet Class object. Usually obtained by <code>MyServlet.class</code>
+	 * @throws ClassNotFoundException The given class is invalid
 	 */
 	public void addServletMapping(String pattern, String servletClass) throws ClassNotFoundException {
 		servlets.addServletMapping(pattern, servletClass);
 	}
 	/**
-	 * Maps a new Servlet to the server with default priority.
+	 * Maps a new Servlet to the server with {@link ServletRepository#DEFAULT_PROCESS_ORDER default priority}.
 	 * 
 	 * This operation can be performed after the server is started.
 	 * @param pattern The URL pattern which will trigger the servlet
@@ -150,22 +165,39 @@ public class Server {
 	 * @param pattern The URL pattern, <code>null</code> if this URL pattern should be ignored
 	 * @param servlet The fully qualified name for the servlet, <code>null</code> if class name should be ignored
 	 * @return  number of mapping entry removed
+	 * @throws ClassNotFoundException The given class is invalid
 	 */
 	public int deleteServletMapping(String pattern, String servlet) throws ClassNotFoundException {
 		return servlets.deleteServletMapping(pattern, servlet);
 	}
-
+	
+	
+	@Deprecated
 	Class<? extends HttpServlet> getMappedServlet(String url) {
 		logger.info("Looking for {}", url);
 		return servlets.getMappedServlet(url);
 	}
+	
+	Class<? extends HttpServlet> getMappedServlet(String url, ServletRepository.MappingSearchMode mode) {
+		logger.info("Looking for {}", url);
+		return servlets.getMappedServlet(url, mode);
+	}
 
+	/**
+	 * Obtain the path for the static content
+	 * @return path for the static content
+	 */
 	public String getStaticContentPath() {
 		return staticContentPath;
 	}
-
+	
+	/**
+	 * Set the path for the static content
+	 * @param staticContentPath path for the static content
+	 */
 	public void setStaticContentPath(String staticContentPath) {
-		this.staticContentPath = staticContentPath;
+		if(staticContentPath != null)
+			this.staticContentPath = staticContentPath;
 	}
 
 	public String getDefaultPage() {
@@ -197,6 +229,7 @@ public class Server {
 	}
 
 	public void setMaxRequestBodySize(int maxRequestBodySize) {
-		this.maxRequestBodySize = maxRequestBodySize;
+		if(maxRequestBodySize > 0)
+			this.maxRequestBodySize = maxRequestBodySize;
 	}
 }
