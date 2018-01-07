@@ -11,10 +11,22 @@ import org.leolo.miniwebserver.ErrorPageRepository.ErrorPageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The main class for the miniwebserver.
+ * 
+ * 
+ * @author leolo
+ *
+ */
 public class Server {
 	static Logger logger = LoggerFactory.getLogger(Server.class);
 	
-	public static void main(String [] args) throws InterruptedException, IOException, ClassNotFoundException{
+	/**
+	 * Sample program to start the server
+	 * @param args Parameter from command line
+	 * @throws Exception Exception
+	 */
+	public static void main(String [] args) throws Exception{
 		
 		Properties prop = new Properties();
 		prop.load(new java.io.FileInputStream("web.properties"));
@@ -45,6 +57,7 @@ public class Server {
 	private int serverPort = 8080;
 	private boolean showError = true;
 	private int maxRequestBodySize = 10485760; //10MiB
+	
 	/**
 	 * Start the server with the current configuration.
 	 * @throws IOException The Server cannot be started because of IO exceptions
@@ -94,6 +107,7 @@ public class Server {
 	 * @param servletClass The fully qualified name for the servlet
 	 * @param processOrder The priority for this servlet to be executed. The smaller the <code>processOrder</code> is,
 	 * the higher priority this entry is.
+	 * @throws ClassNotFoundException The given class is invalid
 	 */
 	public void addServletMapping(String pattern, String servletClass, int processOrder) throws ClassNotFoundException {
 		servlets.addServletMapping(pattern, servletClass, processOrder);
@@ -104,6 +118,7 @@ public class Server {
 	 * This operation can be performed after the server is started.
 	 * @param pattern The URL pattern which will trigger the servlet
 	 * @param servletClass The servlet Class object. Usually obtained by <code>MyServlet.class</code>
+	 * @throws ClassNotFoundException The given class is invalid
 	 */
 	public void addServletMapping(String pattern, String servletClass) throws ClassNotFoundException {
 		servlets.addServletMapping(pattern, servletClass);
@@ -149,6 +164,7 @@ public class Server {
 	 * @param pattern The URL pattern, <code>null</code> if this URL pattern should be ignored
 	 * @param servlet The fully qualified name for the servlet, <code>null</code> if class name should be ignored
 	 * @return  number of mapping entry removed
+	 * @throws ClassNotFoundException The given class is invalid
 	 */
 	public int deleteServletMapping(String pattern, String servlet) throws ClassNotFoundException {
 		return servlets.deleteServletMapping(pattern, servlet);
@@ -166,12 +182,21 @@ public class Server {
 		return servlets.getMappedServlet(url, mode);
 	}
 
+	/**
+	 * Obtain the path for the static content
+	 * @return path for the static content
+	 */
 	public String getStaticContentPath() {
 		return staticContentPath;
 	}
-
+	
+	/**
+	 * Set the path for the static content
+	 * @param staticContentPath path for the static content
+	 */
 	public void setStaticContentPath(String staticContentPath) {
-		this.staticContentPath = staticContentPath;
+		if(staticContentPath != null)
+			this.staticContentPath = staticContentPath;
 	}
 
 	public String getDefaultPage() {
@@ -203,6 +228,7 @@ public class Server {
 	}
 
 	public void setMaxRequestBodySize(int maxRequestBodySize) {
-		this.maxRequestBodySize = maxRequestBodySize;
+		if(maxRequestBodySize > 0)
+			this.maxRequestBodySize = maxRequestBodySize;
 	}
 }
