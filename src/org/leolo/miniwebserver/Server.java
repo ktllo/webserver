@@ -99,7 +99,7 @@ public class Server {
 		servlets.addServletMapping(pattern, servletClass, processOrder);
 	}
 	/**
-	 * Maps a new Servlet to the server with default priority.
+	 * Maps a new Servlet to the server with {@link ServletRepository#DEFAULT_PROCESS_ORDER default priority}.
 	 * 
 	 * This operation can be performed after the server is started.
 	 * @param pattern The URL pattern which will trigger the servlet
@@ -109,7 +109,7 @@ public class Server {
 		servlets.addServletMapping(pattern, servletClass);
 	}
 	/**
-	 * Maps a new Servlet to the server with default priority.
+	 * Maps a new Servlet to the server with {@link ServletRepository#DEFAULT_PROCESS_ORDER default priority}.
 	 * 
 	 * This operation can be performed after the server is started.
 	 * @param pattern The URL pattern which will trigger the servlet
@@ -153,10 +153,17 @@ public class Server {
 	public int deleteServletMapping(String pattern, String servlet) throws ClassNotFoundException {
 		return servlets.deleteServletMapping(pattern, servlet);
 	}
-
+	
+	
+	@Deprecated
 	Class<? extends HttpServlet> getMappedServlet(String url) {
 		logger.info("Looking for {}", url);
 		return servlets.getMappedServlet(url);
+	}
+	
+	Class<? extends HttpServlet> getMappedServlet(String url, ServletRepository.MappingSearchMode mode) {
+		logger.info("Looking for {}", url);
+		return servlets.getMappedServlet(url, mode);
 	}
 
 	public String getStaticContentPath() {
