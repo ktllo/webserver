@@ -199,20 +199,32 @@ public class Server {
 		if(staticContentPath != null)
 			this.staticContentPath = staticContentPath;
 	}
-
+	
+	/**
+	 * Get the default page
+	 * @return file name of the default page
+	 */
 	public String getDefaultPage() {
 		return defaultPage;
 	}
-
+	/**
+	 * Set the file name of the page to be served when client requesting an directory
+	 * @param defaultPage file name of the page to be served when client requesting an directory
+	 */ 
 	public void setDefaultPage(String defaultPage) {
-		this.defaultPage = defaultPage;
+		if(defaultPage != null)
+			this.defaultPage = defaultPage;
 	}
-
+	
+	/**
+	 * Get the port that the server runs on
+	 * @return the port that the server runs on
+	 */
 	public int getServerPort() {
 		return serverPort;
 	}
 
-	public void setServerPort(int serverPort) {
+	public void setServerPort(int serverPort) throws IllegalStateException {
 		this.serverPort = serverPort;
 	}
 
