@@ -9,25 +9,18 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.KeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.xml.bind.DatatypeConverter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,18 +41,33 @@ public class SessionRepository {
 	private Logger logger = LoggerFactory.getLogger(SessionRepository.class);
 	private transient  SecretKey secretKey;
 	private final byte [] IV;
+	private int MAX_KEY_SIZE;
+	public final int KEY_SIZE;
 	private SessionRepository(){
 		random = new Random();
 		cache = new HashMap<>();
+		
 		KeyGenerator keyGen = null;
+		try {
+			MAX_KEY_SIZE = Cipher.getMaxAllowedKeyLength("AES");
+		} catch (NoSuchAlgorithmException e1) {
+			MAX_KEY_SIZE = 0;
+			logger.error(e1.getMessage(),e1);
+		}
 		try {
 			keyGen = KeyGenerator.getInstance("AES");
 		} catch (NoSuchAlgorithmException e) {
+			
 			logger.error(e.getMessage(),e);
 		}
-		keyGen.init(128,new SecureRandom( ) );
+		if(MAX_KEY_SIZE > 256){
+			KEY_SIZE = 256;
+		}else{
+			KEY_SIZE = MAX_KEY_SIZE;
+		}
+		keyGen.init(KEY_SIZE,new SecureRandom( ) );
 		secretKey = keyGen.generateKey();
-		IV = new byte[128 / 8]; 
+		IV = new byte[KEY_SIZE / 8]; 
 		SecureRandom prng = new SecureRandom();
 		prng.nextBytes(IV);
 	}
