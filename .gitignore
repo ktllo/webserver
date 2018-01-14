@@ -4,3 +4,4 @@ target/*
 static/*
 /bin/
 /target/
+/tmp/

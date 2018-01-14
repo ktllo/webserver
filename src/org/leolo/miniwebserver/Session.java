@@ -1,13 +1,21 @@
 package org.leolo.miniwebserver;
 
+import java.io.Serializable;
 import java.util.Enumeration;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
-public class Session implements HttpSession {
-
+public class Session implements HttpSession, Serializable {
+	
+	private static final long serialVersionUID = -9105214725847725643L;
+	private String id;
+	
+	public Session(){
+		id = SessionRepository.getInstance().getNextSessionId();
+	}
+	
 	@Override
 	public long getCreationTime() {
 		// TODO Auto-generated method stub
@@ -16,14 +24,14 @@ public class Session implements HttpSession {
 
 	@Override
 	public String getId() {
-		// TODO Auto-generated method stub
-		return null;
+		return id;
 	}
-
+	
+	long lastAccessedTime = System.currentTimeMillis();
+	
 	@Override
 	public long getLastAccessedTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		return lastAccessedTime;
 	}
 
 	@Override
@@ -108,6 +116,11 @@ public class Session implements HttpSession {
 	public boolean isNew() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public String toString() {
+		return "Session [id=" + id + ", lastAccessedTime=" + lastAccessedTime + "]";
 	}
 
 }
