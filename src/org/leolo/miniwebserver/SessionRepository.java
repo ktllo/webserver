@@ -21,7 +21,9 @@ import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
+import org.apache.commons.codec.binary.Base32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +84,7 @@ public class SessionRepository {
 	public synchronized String getNextSessionId(){
 		byte [] data = new byte [IDENTIFIER_LENGTH];
 		random.nextBytes(data);
-		org.apache.commons.codec.binary.Base32 b32 = new org.apache.commons.codec.binary.Base32();
+		Base32 b32 = new Base32();
 		return b32.encodeAsString(data);
 	}
 	
@@ -132,8 +134,8 @@ public class SessionRepository {
 		try {
 			oos = new ObjectOutputStream(baos);
 			oos.writeObject(s);
-			Cipher cipher = Cipher.getInstance("AES"); //: Same as ES/ECB/PKCS5Padding
-			cipher.init(Cipher.ENCRYPT_MODE, secretKey); 
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(getIV(s.getId()))); 
 			byte[] cipherText = cipher.doFinal(baos.toByteArray());
 			FileOutputStream fos = new FileOutputStream("tmp/"+s.getId());
 			fos.write(cipherText);
@@ -158,6 +160,15 @@ public class SessionRepository {
 		return true;
 	}
 	
+	private byte[] getIV(String id){
+		byte [] iv = new byte[16];
+		byte [] bid = new Base32().decode(id);
+		for(int i=0;i<iv.length;i++){
+			iv[i] = bid[i%bid.length];
+		}
+		return iv;
+	}
+	
 	public Session readFromDisk(String sessionId){
 		//Stage 1: See is target file exists
 		File f = new File("tmp/"+sessionId);
@@ -172,8 +183,8 @@ public class SessionRepository {
 			byte[] data = new byte[(int) f.length()];
 			fis.read(data);
 			fis.close();
-			Cipher cipher = Cipher.getInstance("AES"); 
-			cipher.init(Cipher.DECRYPT_MODE, secretKey);  
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING"); 
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(getIV(sessionId)));  
 			byte[] decryptedData = cipher.doFinal(data);
 			ByteArrayInputStream bais = new ByteArrayInputStream(decryptedData);
 			ObjectInputStream ois = new ObjectInputStream(bais);
