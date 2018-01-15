@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -194,9 +196,13 @@ public class SessionRepository {
 			}else{
 				logger.error("Unexpected class {}",obj.getClass().getName());
 			}
+		}catch(BadPaddingException | StreamCorruptedException e){
+			//Bad key
+			logger.error("Bad decryption key for {}", sessionId);
 		}catch (IOException e) {
 			logger.error(e.getMessage(),e);
 		} catch (GeneralSecurityException e) {
+			logger.error(sessionId);
 			logger.error(e.getMessage(),e);
 		} catch (ClassNotFoundException e) {
 			logger.error(e.getMessage(),e);
